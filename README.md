@@ -44,15 +44,14 @@ docker compose up --build
 
 Для реального открытия Mini App из Telegram нужен HTTPS-адрес. На локальной машине можно поднять туннель, указать его в `MINI_APP_URL` и перезапустить `bot`.
 
-## Автономный бесплатный деплой
+## Автономный бесплатный деплой, простой вариант
 
-Самая простая бесплатная схема:
+Самая простая схема теперь такая:
 
 - Supabase Free — PostgreSQL.
-- Render Free — backend FastAPI и Telegram webhook.
-- Cloudflare Pages — Mini App frontend.
+- Render Free — backend FastAPI, Telegram webhook и Mini App frontend в одном сервисе.
 
-Минусы бесплатной схемы: Render может засыпать после простоя, первый ответ иногда занимает около минуты. Для настоящих продаж лучше VPS.
+Cloudflare Pages на старте не нужен. Минусы бесплатной схемы: Render может засыпать после простоя, первый ответ иногда занимает около минуты. Для настоящих продаж лучше VPS.
 
 ### 1. GitHub
 
@@ -78,8 +77,8 @@ postgresql+psycopg://USER:PASSWORD@HOST:5432/postgres
 ```env
 DATABASE_URL=postgresql+psycopg://...
 BOT_TOKEN=новый_токен_бота
-MINI_APP_URL=https://адрес-cloudflare-pages
-CORS_ORIGINS=https://адрес-cloudflare-pages
+MINI_APP_URL=https://твой-backend.onrender.com
+CORS_ORIGINS=https://твой-backend.onrender.com
 ```
 
 `TELEGRAM_WEBHOOK_SECRET` Render может сгенерировать сам.
@@ -90,31 +89,9 @@ CORS_ORIGINS=https://адрес-cloudflare-pages
 https://resale-radar-api.onrender.com
 ```
 
-### 4. Cloudflare Pages
+После первого деплоя открой Render URL. Он должен показать Mini App.
 
-1. Создай Pages project из того же GitHub-репозитория.
-2. Root directory: `frontend`.
-3. Build command:
-
-```bash
-npm install && npm run build
-```
-
-4. Build output directory:
-
-```text
-dist
-```
-
-5. Environment variable:
-
-```env
-VITE_API_BASE_URL=https://твой-backend.onrender.com
-```
-
-После деплоя Cloudflare даст HTTPS-ссылку. Ее нужно поставить в Render как `MINI_APP_URL` и `CORS_ORIGINS`.
-
-### 5. Telegram webhook
+### 4. Telegram webhook
 
 В локальном терминале выполни:
 
@@ -131,7 +108,7 @@ bash scripts/set_webhook.sh
 bash scripts/check_webhook.sh
 ```
 
-### 6. BotFather Mini App
+### 5. BotFather Mini App
 
 В `@BotFather`:
 
@@ -142,13 +119,17 @@ Menu Button
 Configure menu button
 ```
 
-URL: Cloudflare Pages HTTPS-ссылка.
+URL: Render HTTPS-ссылка.
 
 Название кнопки:
 
 ```text
 Открыть приложение
 ```
+
+## Опционально: Cloudflare Pages
+
+Позже frontend можно вынести на Cloudflare Pages. Конфиги уже есть в `frontend/wrangler.toml`, но для первого деплоя это лишний шаг.
 
 ## Локальный запуск без Docker
 
