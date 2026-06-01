@@ -70,7 +70,7 @@ async def handle_callback(callback_query: dict[str, Any]) -> None:
             int(chat_id),
             "Telegram не открывает локальный localhost как Mini App.\n\n"
             "Для теста открой приложение в браузере на Mac:\n"
-            f"{settings.mini_app_url}?telegram_id={user.get('id')}",
+            f"{settings.public_app_url}?telegram_id={user.get('id')}",
             reply_markup=main_menu(),
         )
 

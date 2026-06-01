@@ -5,11 +5,12 @@ from app.core.config import get_settings
 
 def main_menu() -> dict[str, Any]:
     settings = get_settings()
+    app_url = settings.public_app_url
     app_button: dict[str, Any]
-    if settings.mini_app_url.startswith("https://"):
+    if app_url.startswith("https://"):
         app_button = {
             "text": "Открыть приложение",
-            "web_app": {"url": settings.mini_app_url},
+            "web_app": {"url": app_url},
         }
     else:
         app_button = {

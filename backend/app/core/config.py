@@ -9,7 +9,8 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://resale:resale@localhost:5432/resale"
     bot_token: str | None = None
     telegram_webhook_secret: str = "change-me"
-    mini_app_url: str = "http://localhost:5173"
+    mini_app_url: str | None = None
+    render_external_url: str | None = None
     support_username: str = "support"
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     seed_demo_data: bool = True
@@ -19,7 +20,15 @@ class Settings(BaseSettings):
 
     @property
     def cors_origin_list(self) -> list[str]:
-        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+        for origin in (self.public_app_url, self.render_external_url):
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
+
+    @property
+    def public_app_url(self) -> str:
+        return self.mini_app_url or self.render_external_url or "http://localhost:5173"
 
 
 @lru_cache

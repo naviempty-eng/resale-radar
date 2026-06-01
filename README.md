@@ -77,11 +77,9 @@ postgresql+psycopg://USER:PASSWORD@HOST:5432/postgres
 ```env
 DATABASE_URL=postgresql+psycopg://...
 BOT_TOKEN=новый_токен_бота
-MINI_APP_URL=https://твой-backend.onrender.com
-CORS_ORIGINS=https://твой-backend.onrender.com
 ```
 
-`TELEGRAM_WEBHOOK_SECRET` Render может сгенерировать сам.
+`TELEGRAM_WEBHOOK_SECRET` Render может сгенерировать сам. `MINI_APP_URL` обычно можно не задавать: приложение возьмет публичный `onrender.com` URL автоматически.
 
 После деплоя Render даст backend URL, например:
 
