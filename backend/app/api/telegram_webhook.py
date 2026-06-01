@@ -75,7 +75,7 @@ async def handle_callback(callback_query: dict[str, Any]) -> None:
         )
 
 
-@router.post("/webhook/{secret}")
+@router.post("/webhook/{secret:path}")
 async def telegram_webhook(secret: str, request: Request, db: Session = Depends(get_db)) -> dict[str, bool]:
     settings = get_settings()
     if secret != settings.telegram_webhook_secret:

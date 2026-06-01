@@ -16,7 +16,14 @@ if [ -z "${TELEGRAM_WEBHOOK_SECRET:-}" ]; then
   exit 1
 fi
 
-WEBHOOK_URL="${BACKEND_URL%/}/api/telegram/webhook/${TELEGRAM_WEBHOOK_SECRET}"
+ENCODED_SECRET="$(python3 - <<'PY'
+import os
+from urllib.parse import quote
+
+print(quote(os.environ["TELEGRAM_WEBHOOK_SECRET"], safe=""))
+PY
+)"
+WEBHOOK_URL="${BACKEND_URL%/}/api/telegram/webhook/${ENCODED_SECRET}"
 
 curl -sS "https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook" >/dev/null
 echo
