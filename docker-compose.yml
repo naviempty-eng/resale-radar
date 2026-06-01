@@ -1,0 +1,56 @@
+name: resale-radar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-resale}
+      POSTGRES_USER: ${POSTGRES_USER:-resale}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-resale}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-resale} -d ${POSTGRES_DB:-resale}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:-resale}:${POSTGRES_PASSWORD:-resale}@postgres:5432/${POSTGRES_DB:-resale}
+      BOT_TOKEN: ${BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-local-secret}
+      MINI_APP_URL: ${MINI_APP_URL:-http://localhost:5173}
+      SUPPORT_USERNAME: ${SUPPORT_USERNAME:-support}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
+      SEED_DEMO_DATA: ${SEED_DEMO_DATA:-true}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
+
+  bot:
+    build: ./bot
+    environment:
+      BOT_TOKEN: ${BOT_TOKEN}
+      BACKEND_URL: http://backend:8000
+      MINI_APP_URL: ${MINI_APP_URL:-http://localhost:5173}
+      SUPPORT_USERNAME: ${SUPPORT_USERNAME:-support}
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
