@@ -1,5 +1,14 @@
 services:
   - type: web
+    name: resale-radar-mini-app
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://resale-radar-api.onrender.com
+
+  - type: web
     name: resale-radar-api
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
@@ -14,7 +23,7 @@ services:
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
       - key: MINI_APP_URL
-        value: https://naviempty-eng.github.io/resale-radar/
+        value: https://resale-radar-mini-app.onrender.com
       - key: SUPPORT_USERNAME
         value: support
       - key: ADMIN_TELEGRAM_IDS

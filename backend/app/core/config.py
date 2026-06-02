@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://resale:resale@localhost:5432/resale"
     bot_token: str | None = None
     telegram_webhook_secret: str = "change-me"
-    mini_app_url: str | None = "https://naviempty-eng.github.io/resale-radar/"
+    mini_app_url: str | None = "https://resale-radar-mini-app.onrender.com"
     render_external_url: str | None = None
     support_username: str = "support"
     admin_telegram_ids: str = ""
