@@ -1,7 +1,7 @@
 import logging
 import time
 
-from sqlalchemy import func, select
+from sqlalchemy import func, inspect, select, text
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 
@@ -18,6 +18,7 @@ def init_db() -> None:
     for attempt in range(1, 16):
         try:
             Base.metadata.create_all(bind=engine)
+            migrate_db()
             if settings.seed_demo_data:
                 with Session(engine) as db:
                     seed_items(db)
@@ -26,6 +27,16 @@ def init_db() -> None:
             logger.info("Database is not ready yet, retry %s/15", attempt)
             time.sleep(2)
     Base.metadata.create_all(bind=engine)
+
+
+def migrate_db() -> None:
+    inspector = inspect(engine)
+    if "users" not in inspector.get_table_names():
+        return
+    columns = {column["name"] for column in inspector.get_columns("users")}
+    if "premium_until" not in columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE users ADD COLUMN premium_until TIMESTAMP NULL"))
 
 
 def seed_items(db: Session) -> None:

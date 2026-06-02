@@ -1,7 +1,17 @@
-import { ArrowLeft, CheckCircle2, ExternalLink, Loader2, MessageCircle, ShieldAlert, Star } from "lucide-react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  CheckCircle2,
+  Copy,
+  ExternalLink,
+  Loader2,
+  MessageCircle,
+  ShieldAlert,
+  Star
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { enableDemoPremium, getItems, getMe, requestInstruction } from "./api/client";
+import { createPaymentRequest, getItems, getMe, requestInstruction } from "./api/client";
 import type { Filters, Item, TelegramUser, User } from "./types/domain";
 
 declare global {
@@ -20,6 +30,12 @@ declare global {
 
 const COUNTRIES = ["Китай", "Япония"];
 const CATEGORIES = ["Обувь", "Верх", "Низ", "Аксессуары"];
+const PLANS = [
+  { title: "Пробный день", days: "1 день", price: 99, note: "Быстро посмотреть механику" },
+  { title: "Неделя", days: "7 дней", price: 399, note: "Проверить категории и спрос" },
+  { title: "Месяц", days: "30 дней", price: 990, note: "Оптимально для работы" },
+  { title: "Год", days: "365 дней", price: 7990, note: "Лучшая цена за месяц" }
+];
 const PLATFORMS_BY_COUNTRY: Record<string, string[]> = {
   Китай: ["Goofish"],
   Япония: ["Mercari", "Yahoo Auctions"]
@@ -47,20 +63,51 @@ function RiskBadge({ risk }: { risk: string }) {
   return <span className={`risk risk-${risk}`}>{label} риск</span>;
 }
 
-function Paywall({ onActivate, loading }: { onActivate: () => void; loading: boolean }) {
+function Paywall({
+  telegramId,
+  onBuy,
+  onCopyId,
+  loading
+}: {
+  telegramId: number;
+  onBuy: () => void;
+  onCopyId: () => void;
+  loading: boolean;
+}) {
   return (
     <section className="paywall">
-      <div>
-        <p className="eyebrow">Доступ закрыт</p>
-        <h1>Подборки доступны после покупки</h1>
-        <p>
-          На этом этапе оплата не подключена. Для проверки MVP можно активировать демо-доступ, который ставит
-          пользователю флаг <span className="code">is_premium</span>.
-        </p>
+      <div className="paywall-head">
+        <p className="eyebrow">Закрытый доступ</p>
+        <h1>Подборки для ресейла</h1>
+        <p>Выбери тариф, оплати вручную и отправь свой Telegram ID в поддержку. Доступ включается админом.</p>
       </div>
-      <button className="primary-button" onClick={onActivate} disabled={loading}>
-        {loading ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
-        Активировать демо-доступ
+
+      <div className="plans-grid">
+        {PLANS.map((plan) => (
+          <article className={plan.title === "Месяц" ? "plan-card featured" : "plan-card"} key={plan.title}>
+            <div>
+              <span>{plan.days}</span>
+              <h2>{plan.title}</h2>
+              <p>{plan.note}</p>
+            </div>
+            <strong>{rub(plan.price)}</strong>
+          </article>
+        ))}
+      </div>
+
+      <div className="buyer-id">
+        <div>
+          <span>Твой Telegram ID</span>
+          <strong>{telegramId}</strong>
+        </div>
+        <button className="icon-button" onClick={onCopyId} aria-label="Скопировать Telegram ID">
+          <Copy size={18} />
+        </button>
+      </div>
+
+      <button className="primary-button" onClick={onBuy} disabled={loading}>
+        {loading ? <Loader2 className="spin" size={18} /> : <MessageCircle size={18} />}
+        Купить доступ
       </button>
     </section>
   );
@@ -221,7 +268,7 @@ export default function App() {
   }, [telegramUser]);
 
   useEffect(() => {
-    if (!user?.is_premium || !filtersComplete) {
+    if (!user?.access_active || !filtersComplete) {
       setItems([]);
       return;
     }
@@ -231,7 +278,7 @@ export default function App() {
       .then(setItems)
       .catch((error) => setMessage(error.message))
       .finally(() => setLoading(false));
-  }, [filters, filtersComplete, telegramUser, user?.is_premium]);
+  }, [filters, filtersComplete, telegramUser, user?.access_active]);
 
   function updateCountry(country: string) {
     setSelectedItem(null);
@@ -248,17 +295,22 @@ export default function App() {
     setFilters((current) => ({ ...current, category }));
   }
 
-  async function activateDemoPremium() {
+  async function startManualPurchase() {
     setActionLoading(true);
     try {
-      const updated = await enableDemoPremium(telegramUser);
+      const updated = await createPaymentRequest(telegramUser);
       setUser(updated);
-      setMessage("Демо-доступ активирован.");
+      setMessage("Напиши боту /buy или отправь свой Telegram ID в поддержку.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Не удалось активировать доступ.");
+      setMessage(error instanceof Error ? error.message : "Не удалось создать заявку.");
     } finally {
       setActionLoading(false);
     }
+  }
+
+  async function copyTelegramId() {
+    await navigator.clipboard?.writeText(String(telegramUser.id));
+    setMessage("Telegram ID скопирован.");
   }
 
   async function sendInstruction() {
@@ -282,10 +334,10 @@ export default function App() {
     );
   }
 
-  if (!user?.is_premium) {
+  if (!user?.access_active) {
     return (
       <main className="app-shell">
-        <Paywall onActivate={activateDemoPremium} loading={actionLoading} />
+        <Paywall telegramId={telegramUser.id} onBuy={startManualPurchase} onCopyId={copyTelegramId} loading={actionLoading} />
         {message && <div className="toast">{message}</div>}
       </main>
     );
@@ -311,6 +363,12 @@ export default function App() {
         <div>
           <p className="eyebrow">Resale Radar</p>
           <h1>Выгодные товары</h1>
+          {user.premium_until && (
+            <p className="access-line">
+              <CalendarDays size={15} />
+              Доступ до {new Date(user.premium_until).toLocaleDateString("ru-RU")}
+            </p>
+          )}
         </div>
         <div className="premium-pill">
           <CheckCircle2 size={16} />

@@ -3,6 +3,8 @@ export type User = {
   telegram_id: number;
   username: string | null;
   is_premium: boolean;
+  premium_until: string | null;
+  access_active: boolean;
   created_at: string;
 };
 

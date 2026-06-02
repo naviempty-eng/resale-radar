@@ -1,5 +1,7 @@
 from typing import Annotated
 
+from datetime import datetime, timedelta
+
 from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -19,7 +21,7 @@ router = APIRouter(prefix="/api")
 
 
 def require_premium(user: User) -> None:
-    if not user.is_premium:
+    if not user.access_active:
         raise HTTPException(status_code=402, detail="Premium access is required")
 
 
@@ -46,9 +48,8 @@ def read_me(user: CurrentUser) -> User:
     return user
 
 
-@router.post("/users/me/premium-demo", response_model=UserRead)
-def enable_demo_premium(user: CurrentUser, db: DbSession) -> User:
-    user.is_premium = True
+@router.post("/users/me/payment-request", response_model=UserRead)
+def create_payment_request(user: CurrentUser, db: DbSession) -> User:
     db.commit()
     db.refresh(user)
     return user

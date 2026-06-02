@@ -1,6 +1,7 @@
 from typing import Any
 
 from app.core.config import get_settings
+from app.billing.plans import format_plans
 
 
 def main_menu() -> dict[str, Any]:
@@ -31,4 +32,14 @@ def welcome_text() -> str:
     return (
         "Привет. Это сервис подборок товаров для ресейла из Китая и Японии.\n\n"
         "Открой приложение, чтобы выбрать страну, площадку, категорию и посмотреть расчет прибыли."
+    )
+
+
+def buy_text(telegram_id: int | None = None) -> str:
+    user_line = f"\n\nТвой Telegram ID: {telegram_id}" if telegram_id else ""
+    return (
+        format_plans()
+        + "\n\nОплата пока вручную: выбери тариф и отправь в поддержку свой Telegram ID. "
+        "После оплаты доступ включат командой администратора."
+        + user_line
     )

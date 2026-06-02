@@ -31,8 +31,8 @@ export function getMe(user: TelegramUser): Promise<User> {
   return request<User>("/api/users/me", user);
 }
 
-export function enableDemoPremium(user: TelegramUser): Promise<User> {
-  return request<User>("/api/users/me/premium-demo", user, { method: "POST" });
+export function createPaymentRequest(user: TelegramUser): Promise<User> {
+  return request<User>("/api/users/me/payment-request", user, { method: "POST" });
 }
 
 export async function getItems(user: TelegramUser, filters: Filters): Promise<Item[]> {

@@ -20,6 +20,7 @@ def upgrade() -> None:
         sa.Column("telegram_id", sa.BigInteger(), nullable=False),
         sa.Column("username", sa.String(length=255), nullable=True),
         sa.Column("is_premium", sa.Boolean(), nullable=False),
+        sa.Column("premium_until", sa.DateTime(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )

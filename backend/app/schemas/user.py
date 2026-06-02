@@ -13,6 +13,8 @@ class UserRead(BaseModel):
     telegram_id: int
     username: str | None
     is_premium: bool
+    premium_until: datetime | None
+    access_active: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}

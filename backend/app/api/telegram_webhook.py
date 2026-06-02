@@ -1,4 +1,5 @@
 from typing import Any
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import select
@@ -7,7 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.config import get_settings
 from app.db.session import get_db
 from app.models.user import User
-from app.services.bot_menu import main_menu, welcome_text
+from app.billing.plans import format_plans
+from app.services.bot_menu import buy_text, main_menu, welcome_text
 from app.services.telegram import answer_callback_query, send_telegram_message
 
 router = APIRouter(prefix="/api/telegram")
@@ -36,6 +38,90 @@ async def handle_start(db: Session, message: dict[str, Any]) -> None:
     await send_telegram_message(int(chat["id"]), welcome_text(), reply_markup=main_menu())
 
 
+def is_admin(telegram_id: int) -> bool:
+    return telegram_id in get_settings().admin_id_set
+
+
+def premium_text(user: User) -> str:
+    if user.is_premium:
+        return "Доступ: бессрочный premium."
+    if user.premium_until and user.premium_until > datetime.utcnow():
+        return f"Доступ активен до: {user.premium_until:%Y-%m-%d %H:%M} UTC."
+    return "Доступ не активен."
+
+
+async def handle_text_command(db: Session, message: dict[str, Any]) -> None:
+    telegram_user = message.get("from") or {}
+    chat = message.get("chat") or {}
+    text = (message.get("text") or "").strip()
+    chat_id = chat.get("id")
+    telegram_id = telegram_user.get("id")
+    if not chat_id or not telegram_id:
+        return
+
+    user = upsert_telegram_user(db, telegram_user)
+
+    if text.startswith("/start"):
+        await send_telegram_message(int(chat_id), welcome_text(), reply_markup=main_menu())
+        return
+
+    if text.startswith("/id"):
+        await send_telegram_message(
+            int(chat_id),
+            f"Твой Telegram ID: {telegram_id}\n{premium_text(user)}",
+            reply_markup=main_menu(),
+        )
+        return
+
+    if text.startswith("/buy"):
+        await send_telegram_message(
+            int(chat_id),
+            format_plans()
+            + "\n\nДля покупки отправь в поддержку свой Telegram ID и нужный тариф.\n"
+            f"Твой Telegram ID: {telegram_id}",
+            reply_markup=main_menu(),
+        )
+        return
+
+    if text.startswith("/grant"):
+        if not is_admin(int(telegram_id)):
+            await send_telegram_message(int(chat_id), "Команда доступна только админу.")
+            return
+        parts = text.split()
+        if len(parts) != 3:
+            await send_telegram_message(int(chat_id), "Формат: /grant TELEGRAM_ID DAYS")
+            return
+        target_id = int(parts[1])
+        days = int(parts[2])
+        target = db.scalar(select(User).where(User.telegram_id == target_id))
+        if target is None:
+            target = User(telegram_id=target_id)
+            db.add(target)
+            db.flush()
+        start = target.premium_until if target.premium_until and target.premium_until > datetime.utcnow() else datetime.utcnow()
+        target.premium_until = start + timedelta(days=days)
+        db.commit()
+        await send_telegram_message(int(chat_id), f"Готово. Пользователю {target_id} выдан доступ на {days} дн.")
+        await send_telegram_message(target_id, f"Доступ активирован на {days} дн. Можно открывать приложение.", reply_markup=main_menu())
+        return
+
+    if text.startswith("/revoke"):
+        if not is_admin(int(telegram_id)):
+            await send_telegram_message(int(chat_id), "Команда доступна только админу.")
+            return
+        parts = text.split()
+        if len(parts) != 2:
+            await send_telegram_message(int(chat_id), "Формат: /revoke TELEGRAM_ID")
+            return
+        target_id = int(parts[1])
+        target = db.scalar(select(User).where(User.telegram_id == target_id))
+        if target is not None:
+            target.is_premium = False
+            target.premium_until = None
+            db.commit()
+        await send_telegram_message(int(chat_id), f"Доступ пользователя {target_id} отключен.")
+
+
 async def handle_callback(callback_query: dict[str, Any]) -> None:
     settings = get_settings()
     callback_id = callback_query.get("id")
@@ -53,9 +139,7 @@ async def handle_callback(callback_query: dict[str, Any]) -> None:
     if data == "buy_access":
         await send_telegram_message(
             int(chat_id),
-            "Оплата пока не подключена.\n\n"
-            "В MVP доступ управляется флагом is_premium. Для теста открой приложение и нажми "
-            "\"Активировать демо-доступ\" на экране оплаты-заглушки.",
+            buy_text(user.get("id")),
             reply_markup=main_menu(),
         )
     elif data == "support":
@@ -83,8 +167,8 @@ async def telegram_webhook(secret: str, request: Request, db: Session = Depends(
 
     update = await request.json()
     message = update.get("message")
-    if message and (message.get("text") or "").strip().startswith("/start"):
-        await handle_start(db, message)
+    if message and (message.get("text") or "").strip().startswith("/"):
+        await handle_text_command(db, message)
 
     callback_query = update.get("callback_query")
     if callback_query:

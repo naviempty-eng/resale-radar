@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     mini_app_url: str | None = None
     render_external_url: str | None = None
     support_username: str = "support"
+    admin_telegram_ids: str = ""
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
     seed_demo_data: bool = True
     dev_default_telegram_id: int = Field(default=1001)
@@ -29,6 +30,15 @@ class Settings(BaseSettings):
     @property
     def public_app_url(self) -> str:
         return self.mini_app_url or self.render_external_url or "http://localhost:5173"
+
+    @property
+    def admin_id_set(self) -> set[int]:
+        ids: set[int] = set()
+        for value in self.admin_telegram_ids.split(","):
+            value = value.strip()
+            if value:
+                ids.add(int(value))
+        return ids
 
 
 @lru_cache
