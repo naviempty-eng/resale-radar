@@ -13,6 +13,8 @@ services:
         sync: false
       - key: TELEGRAM_WEBHOOK_SECRET
         generateValue: true
+      - key: MINI_APP_URL
+        value: https://naviempty-eng.github.io/resale-radar/
       - key: SUPPORT_USERNAME
         value: support
       - key: ADMIN_TELEGRAM_IDS

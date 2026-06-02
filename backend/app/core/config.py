@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -9,7 +10,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://resale:resale@localhost:5432/resale"
     bot_token: str | None = None
     telegram_webhook_secret: str = "change-me"
-    mini_app_url: str | None = None
+    mini_app_url: str | None = "https://naviempty-eng.github.io/resale-radar/"
     render_external_url: str | None = None
     support_username: str = "support"
     admin_telegram_ids: str = ""
@@ -22,7 +23,8 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         origins = [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
-        for origin in (self.public_app_url, self.render_external_url):
+        for url in (self.public_app_url, self.render_external_url):
+            origin = url_origin(url)
             if origin and origin not in origins:
                 origins.append(origin)
         return origins
@@ -44,3 +46,12 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+def url_origin(url: str | None) -> str | None:
+    if not url:
+        return None
+    parsed = urlparse(url)
+    if not parsed.scheme or not parsed.netloc:
+        return None
+    return f"{parsed.scheme}://{parsed.netloc}"
