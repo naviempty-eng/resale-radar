@@ -95,12 +95,15 @@ async def request_instruction(item_id: int, user: CurrentUser, db: DbSession) ->
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
 
+    content = build_instruction(item)
     instruction = item.instruction
     if instruction is None:
-        instruction = Instruction(item_id=item.id, content=build_instruction(item))
+        instruction = Instruction(item_id=item.id, content=content)
         db.add(instruction)
-        db.commit()
-        db.refresh(instruction)
+    else:
+        instruction.content = content
+    db.commit()
+    db.refresh(instruction)
 
     sent = await send_telegram_message(user.telegram_id, instruction.content)
     return InstructionResponse(sent=sent, content=instruction.content)

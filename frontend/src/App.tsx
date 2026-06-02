@@ -29,7 +29,7 @@ declare global {
   }
 }
 
-const COUNTRIES = ["Китай", "Япония"];
+const COUNTRIES = ["Китай", "Япония", "США"];
 const CATEGORIES = ["Обувь", "Верх", "Низ", "Аксессуары"];
 const PLANS = [
   { title: "Пробный день", days: "1 день", price: 99, note: "Быстро посмотреть механику" },
@@ -39,7 +39,8 @@ const PLANS = [
 ];
 const PLATFORMS_BY_COUNTRY: Record<string, string[]> = {
   Китай: ["Goofish"],
-  Япония: ["Mercari", "Yahoo Auctions"]
+  Япония: ["Mercari", "Yahoo Auctions"],
+  США: ["eBay", "Depop", "Mercari US"]
 };
 
 function getTelegramUser(): TelegramUser {
@@ -59,9 +60,22 @@ function rub(value: number): string {
   return new Intl.NumberFormat("ru-RU", { style: "currency", currency: "RUB", maximumFractionDigits: 0 }).format(value);
 }
 
-function RiskBadge({ risk }: { risk: string }) {
-  const label = risk === "high" ? "Высокий" : risk === "medium" ? "Средний" : "Низкий";
-  return <span className={`risk risk-${risk}`}>{label} риск</span>;
+function originalityPercent(risk: string): number {
+  if (risk === "high") return 58;
+  if (risk === "medium") return 76;
+  return 92;
+}
+
+function OriginalityBadge({ risk }: { risk: string }) {
+  return <span className={`risk risk-${risk}`}>Оригинальность {originalityPercent(risk)}%</span>;
+}
+
+function intermediaryHandle(country: string): string {
+  return country === "Китай" ? "@BogeManager" : "@IneartheDManager";
+}
+
+function buildIntermediaryMessage(item: Item): string {
+  return `Привет, хочу заказать: ${item.platform}\n${item.title}\n${item.source_url}`;
 }
 
 function Paywall({
@@ -161,21 +175,19 @@ function ItemCard({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }
             <p className="brand">{item.brand}</p>
             <h3>{item.title}</h3>
           </div>
-          <RiskBadge risk={item.risk_level} />
+          <OriginalityBadge risk={item.authenticity_risk} />
         </div>
         <div className="meta-grid">
-          <span>{item.country}</span>
-          <span>{item.platform}</span>
-          <span>{item.category}</span>
-          <span>{item.size}</span>
+          <span>Размер: {item.size}</span>
+          <span>Оригинальность: {originalityPercent(item.authenticity_risk)}%</span>
         </div>
         <div className="profit-row">
           <div>
-            <span>Итого</span>
+            <span>Цена с доставкой ~</span>
             <strong>{rub(item.total_price_rub)}</strong>
           </div>
           <div>
-            <span>Авито</span>
+            <span>Цена на Авито ~</span>
             <strong>{rub(item.avito_price)}</strong>
           </div>
           <div className="profit">
@@ -185,7 +197,7 @@ function ItemCard({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }
         </div>
         <button className="secondary-button" onClick={() => onOpen(item)}>
           <Gem size={17} />
-          Смотреть расчет
+          Смотреть товар
         </button>
       </div>
     </article>
@@ -215,19 +227,18 @@ function ItemDetails({
           <p className="brand">{item.brand}</p>
           <h1>{item.title}</h1>
         </div>
-        <RiskBadge risk={item.risk_level} />
+        <OriginalityBadge risk={item.authenticity_risk} />
       </div>
       <div className="details-grid">
-        <Info label="Страна" value={item.country} />
-        <Info label="Площадка" value={item.platform} />
-        <Info label="Категория" value={item.category} />
         <Info label="Размер" value={item.size} />
-        <Info label="Цена покупки" value={rub(item.purchase_price)} />
-        <Info label="Доставка" value={rub(item.shipping_price)} />
-        <Info label="Итоговая цена" value={rub(item.total_price_rub)} />
-        <Info label="Средняя Авито" value={rub(item.avito_price)} />
+        <Info label="Оригинальность" value={`${originalityPercent(item.authenticity_risk)}%`} />
+        <Info label="Цена с доставкой ~" value={rub(item.total_price_rub)} />
+        <Info label="Цена на Авито ~" value={rub(item.avito_price)} />
         <Info label="Прибыль" value={rub(item.expected_profit)} highlight />
-        <Info label="Риск оригинальности" value={item.authenticity_risk} />
+      </div>
+      <div className="copy-panel">
+        <span>Текст посреднику {intermediaryHandle(item.country)}</span>
+        <p>{buildIntermediaryMessage(item)}</p>
       </div>
       <div className="details-actions">
         <a className="secondary-button" href={item.source_url} target="_blank" rel="noreferrer">
@@ -235,8 +246,8 @@ function ItemDetails({
           Ссылка на товар
         </a>
         <button className="primary-button" onClick={onInstruction} disabled={instructionLoading}>
-          {instructionLoading ? <Loader2 className="spin" size={18} /> : <MessageCircle size={18} />}
-          Получить инструкцию
+          {instructionLoading ? <Loader2 className="spin" size={18} /> : <Copy size={18} />}
+          Получить инструкцию и скопировать текст
         </button>
       </div>
     </main>
@@ -323,8 +334,13 @@ export default function App() {
     if (!selectedItem) return;
     setActionLoading(true);
     try {
+      await navigator.clipboard?.writeText(buildIntermediaryMessage(selectedItem));
       const result = await requestInstruction(telegramUser, selectedItem.id);
-      setMessage(result.sent ? "Инструкция отправлена в Telegram." : "Инструкция создана, но бот не смог отправить сообщение.");
+      setMessage(
+        result.sent
+          ? "Текст посреднику скопирован, инструкция отправлена в Telegram."
+          : "Текст посреднику скопирован, но бот не смог отправить сообщение."
+      );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Не удалось получить инструкцию.");
     } finally {
@@ -368,7 +384,7 @@ export default function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Resale Radar</p>
-          <h1>Каталог сделок</h1>
+          <h1>Список товаров</h1>
           {user.premium_until && (
             <p className="access-line">
               <CalendarDays size={15} />

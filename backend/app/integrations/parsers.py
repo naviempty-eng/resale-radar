@@ -34,3 +34,18 @@ class MercariParser:
 class YahooAuctionsParser:
     async def search(self, query: str, category: str) -> list[ExternalItem]:
         raise NotImplementedError("Yahoo Auctions parser will be connected later.")
+
+
+class EbayParser:
+    async def search(self, query: str, category: str) -> list[ExternalItem]:
+        raise NotImplementedError("eBay parser will be connected later.")
+
+
+class DepopParser:
+    async def search(self, query: str, category: str) -> list[ExternalItem]:
+        raise NotImplementedError("Depop parser will be connected later.")
+
+
+class MercariUsParser:
+    async def search(self, query: str, category: str) -> list[ExternalItem]:
+        raise NotImplementedError("Mercari US parser will be connected later.")
