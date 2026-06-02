@@ -4,10 +4,11 @@ import {
   CheckCircle2,
   Copy,
   ExternalLink,
+  Gem,
   Loader2,
   MessageCircle,
+  ScanSearch,
   ShieldAlert,
-  Star
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -76,10 +77,13 @@ function Paywall({
 }) {
   return (
     <section className="paywall">
-      <div className="paywall-head">
-        <p className="eyebrow">Закрытый доступ</p>
-        <h1>Подборки для ресейла</h1>
-        <p>Выбери тариф, оплати вручную и отправь свой Telegram ID в поддержку. Доступ включается админом.</p>
+      <div className="paywall-hero">
+        <div className="hero-mark">
+          <ScanSearch size={24} />
+        </div>
+        <p className="eyebrow">Resale Radar</p>
+        <h1>Подборки с расчетом маржи</h1>
+        <p>Товары из Китая и Японии, фильтр рисковых продавцов, оценка Авито и инструкция по выкупу.</p>
       </div>
 
       <div className="plans-grid">
@@ -109,6 +113,7 @@ function Paywall({
         {loading ? <Loader2 className="spin" size={18} /> : <MessageCircle size={18} />}
         Купить доступ
       </button>
+      <p className="pay-note">После оплаты отправь ID и тариф в поддержку. Доступ включается вручную.</p>
     </section>
   );
 }
@@ -148,6 +153,7 @@ function ItemCard({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }
     <article className="item-card">
       <button className="image-button" onClick={() => onOpen(item)} aria-label={`Открыть ${item.title}`}>
         <img src={item.image_url} alt={item.title} loading="lazy" />
+        <span>{item.platform}</span>
       </button>
       <div className="item-body">
         <div className="item-title-row">
@@ -178,8 +184,8 @@ function ItemCard({ item, onOpen }: { item: Item; onOpen: (item: Item) => void }
           </div>
         </div>
         <button className="secondary-button" onClick={() => onOpen(item)}>
-          <Star size={17} />
-          Открыть карточку
+          <Gem size={17} />
+          Смотреть расчет
         </button>
       </div>
     </article>
@@ -362,7 +368,7 @@ export default function App() {
       <header className="topbar">
         <div>
           <p className="eyebrow">Resale Radar</p>
-          <h1>Выгодные товары</h1>
+          <h1>Каталог сделок</h1>
           {user.premium_until && (
             <p className="access-line">
               <CalendarDays size={15} />
@@ -372,7 +378,7 @@ export default function App() {
         </div>
         <div className="premium-pill">
           <CheckCircle2 size={16} />
-          Premium
+          Active
         </div>
       </header>
 
