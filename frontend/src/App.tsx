@@ -100,7 +100,7 @@ function Paywall({
 
       <div className="plans-grid">
         {PLANS.map((plan) => (
-          <article className={plan.title === "Месяц" ? "plan-card featured" : "plan-card"} key={plan.title}>
+          <article className="plan-card" key={plan.title}>
             <div>
               <span>{plan.days}</span>
               <h2>{plan.title}</h2>
