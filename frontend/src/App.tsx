@@ -32,10 +32,8 @@ declare global {
 const COUNTRIES = ["Китай", "Япония", "США"];
 const CATEGORIES = ["Обувь", "Верх", "Низ", "Аксессуары"];
 const PLANS = [
-  { title: "Пробный день", days: "1 день", price: 99, note: "Быстро посмотреть механику" },
-  { title: "Неделя", days: "7 дней", price: 399, note: "Проверить категории и спрос" },
-  { title: "Месяц", days: "30 дней", price: 990, note: "Оптимально для работы" },
-  { title: "Год", days: "365 дней", price: 7990, note: "Лучшая цена за месяц" }
+  { title: "Пробный день", days: "1 день", price: 200, note: "Быстро посмотреть механику" },
+  { title: "Неделя", days: "7 дней", price: 1000, note: "Проверить категории и спрос" }
 ];
 const PLATFORMS_BY_COUNTRY: Record<string, string[]> = {
   Китай: ["Goofish"],

@@ -136,21 +136,26 @@ h3 {
 
 .risk {
   padding: 6px 8px;
+  color: #55ff9a;
+  background: rgba(85, 255, 154, 0.12);
+  box-shadow:
+    inset 0 0 0 1px rgba(85, 255, 154, 0.34),
+    0 0 18px rgba(85, 255, 154, 0.12);
 }
 
 .risk-low {
-  color: #0d6242;
-  background: rgba(157, 255, 204, 0.16);
+  color: #55ff9a;
+  background: rgba(85, 255, 154, 0.12);
 }
 
 .risk-medium {
-  color: #765100;
-  background: rgba(255, 207, 102, 0.17);
+  color: #55ff9a;
+  background: rgba(85, 255, 154, 0.12);
 }
 
 .risk-high {
-  color: #8f2020;
-  background: rgba(255, 102, 102, 0.17);
+  color: #55ff9a;
+  background: rgba(85, 255, 154, 0.12);
 }
 
 .paywall {
